@@ -18,17 +18,20 @@ abstract class AbstractLaravelQueueJob
 
     protected int|string|null $id = 0;
     protected \DateTime|string|null $run_at = null;
+    protected array|null $arguments = null;
 
     /**
      * Create a new job instance.
      *
      * @param int|string|null       $id
      * @param \DateTime|string|null $runt_at
+     * @param array|null            $arguments
      */
-    public function __construct($id, $runt_at = null)
+    public function __construct($id, $runt_at = null, ?array $arguments = null)
     {
         $this->id = $id;
         $this->run_at = $runt_at;
+        $this->arguments = $arguments;
     }
 
     /**
@@ -48,7 +51,7 @@ abstract class AbstractLaravelQueueJob
      */
     public function callHandler()
     {
-        return $this->shouldRun() ? call_user_func([ $this, 'handle' ]) : null;
+        return $this->shouldRun() ? call_user_func_array([ $this, 'handle' ], (array) $this->arguments) : null;
     }
 
     /**
@@ -67,7 +70,7 @@ abstract class AbstractLaravelQueueJob
         $arguments = array_wrap(!$arguments ? [] : $arguments);
         $date = data_get($queue, 'date');
         $id = data_get($queue, 'model_id');
-        $class = new static($id, $date, ...$arguments);
+        $class = new static($id, $date, $arguments);
 
         return $class->shouldRun() ? $class : null;
     }
@@ -83,6 +86,30 @@ abstract class AbstractLaravelQueueJob
     public static function addJob(\Illuminate\Database\Eloquent\Model $model, ?\DateTime $valid_at = null, ?array $arguments = null)
     {
         return LaravelQueue::addJob($model, static::class, $valid_at, $arguments);
+    }
+
+    /**
+     * Get job model & find id
+     *
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function model(): ?\Illuminate\Database\Eloquent\Model
+    {
+        $current = LaravelQueue::getCurrentQueue();
+        $name = key($current);
+        $queue = $current[ $name ];
+        $model = data_get($queue, 'model');
+        $model_id = data_get($queue, 'model_id');
+
+        if( $model ) {
+            if( $model_id ) {
+                return $model::findOrFail($model_id);
+            }
+
+            return new $model();
+        }
+
+        return null;
     }
 }
 

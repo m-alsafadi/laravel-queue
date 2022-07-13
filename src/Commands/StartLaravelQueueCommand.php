@@ -3,6 +3,7 @@
 namespace MAlsafadi\LaravelQueue\Commands;
 
 use MAlsafadi\LaravelQueue\Facades\LaravelQueue;
+use Symfony\Component\Console\Input\InputOption;
 
 class StartLaravelQueueCommand extends \Illuminate\Console\Command
 {
@@ -31,6 +32,9 @@ class StartLaravelQueueCommand extends \Illuminate\Console\Command
         $this->setAliases([
                               'lqs',
                           ]);
+        $this->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'Override the job executing limit.', null);
+        $this->addOption('keep', 'K', InputOption::VALUE_NONE, 'Keep the job in queue after execution.', null);
+        $this->addOption('freeze', 'U', InputOption::VALUE_NONE, 'Do not update the job and register the results.', null);
     }
 
     /**
@@ -44,7 +48,7 @@ class StartLaravelQueueCommand extends \Illuminate\Console\Command
             return 0;
         }
 
-        $this->queues()->run();
+        $this->queues()->run($this->option('keep') ?? false, !($this->option('freeze') ?? false));
 
         return 0;
     }
@@ -65,6 +69,7 @@ class StartLaravelQueueCommand extends \Illuminate\Console\Command
     {
         return LaravelQueue::load()
                            ->onlyNew()
-                           ->onlyValid();
+                           ->onlyValid()
+                           ->applyLimit($this->option('limit'));
     }
 }

@@ -4,7 +4,6 @@ namespace MAlsafadi\LaravelQueue;
 
 use Carbon\Carbon;
 use Illuminate\Container\Container;
-use MAlsafadi\LaravelQueue\Facades\LaravelQueue;
 use MAlsafadi\LaravelQueue\Traits\TLaravelQueueCache;
 use MAlsafadi\LaravelQueue\Traits\TLaravelQueueFile;
 use MAlsafadi\LaravelQueue\Traits\TLaravelQueueLog;
@@ -69,10 +68,13 @@ abstract class LaravelQueueAbstract
     public bool $use_cache = false;
     public bool $human_readable_save = false;
     public bool $single_process = true;
+    public ?int $jobs_execution_limit = null;
 
     public string $STORAGE_NAME = 'jobs.json';
     public string $STORAGE_NAME_FAIL = 'failed_jobs.json';
     public string $STORAGE_NAME_SUCCESS = 'success_jobs.json';
+
+    private ?int $pid = null;
 
     public function __construct(Container $app)
     {
@@ -85,6 +87,7 @@ abstract class LaravelQueueAbstract
         $this->use_cache = $this->config('use_cache', false);
         $this->human_readable_save = $this->config('human_readable_save', false);
         $this->single_process = $this->config('single_process', true);
+        $this->jobs_execution_limit = $this->config('jobs_execution_limit', null);
         $this->STORAGE_NAME = $this->config('jobs_filename', "jobs.json");
         $this->STORAGE_NAME_FAIL = $this->config('failed_jobs_filename', "failed_jobs.json");
         $this->STORAGE_NAME_SUCCESS = $this->config('success_jobs_filename', "success_jobs.json");
@@ -95,14 +98,15 @@ abstract class LaravelQueueAbstract
     /**
      * Run all queues.
      *
-     * @param array $only
+     * @param bool $keep
+     * @param bool $register_result
      *
      * @return static
-     *
+     * @throws \Throwable
      */
-    public function run()
+    public function run(bool $keep = false, bool $register_result = true)
     {
-        if( !static::isEnabled() ) {
+        if( !static::isEnabled() || static::isProcessRunning() ) {
             return $this;
         }
 
@@ -124,6 +128,7 @@ abstract class LaravelQueueAbstract
                 $success = $results || is_null($results);
             } catch(\Exception $exception) {
                 $results = $exception->getMessage();
+                logger($exception);
                 $success = false;
             }
 
@@ -132,9 +137,9 @@ abstract class LaravelQueueAbstract
             $queue[ 'result' ] = $results;
             $queue[ 'result_at' ] = now();
 
-            $this->addOrUpdate($name, $queue, null);
+            $register_result && $this->addOrUpdate($name, $queue, null);
 
-            $this->move($name, null, $success);
+            !$keep && $this->move($name, null, $success);
         }
         unset($queue);
 
@@ -184,6 +189,33 @@ abstract class LaravelQueueAbstract
 
         return ($this->queues ?: []);
     }
+
+    /**
+     * Override the limit or Check if there is limit in config then apply it.
+     *
+     * @return $this
+     */
+    public function applyLimit(?int $limit = null): static
+    {
+        return !is_null($limit) || $this->jobs_execution_limit ? $this->limit(!is_null($limit) ? $limit : $this->jobs_execution_limit) : $this;
+    }
+
+    /**
+     * Limit jobs in queue.
+     *
+     * @return static
+     */
+    public function limit(?int $count = null): static
+    {
+        if( $count && $count > 0 ) {
+            if( $count < $this->count() ) {
+                $this->queues = slice($this->queues, 0, $count);
+            }
+        }
+
+        return $this;
+    }
+
 // endregion: Queue
 
     /**
@@ -476,13 +508,12 @@ abstract class LaravelQueueAbstract
     /**
      * Returns current executing job.
      *
-     * @return null[]
+     * @return array
      */
-    public static function getCurrentQueue()
+    public static function getCurrentQueue(): array
     {
         return [
-            static::$currentName,
-            data_get(static::$currentQueue, 'class'),
+            static::$currentName => static::$currentQueue,
         ];
     }
 
@@ -565,7 +596,8 @@ abstract class LaravelQueueAbstract
             return false;
         }
 
-        $pid = data_get(static::getData(), 'pid');
+        $pid = $this->pid ?? data_get(static::getData(), 'pid');
+        $this->pid = $pid;
         $isRunning = false;
 
         if( $pid ) {

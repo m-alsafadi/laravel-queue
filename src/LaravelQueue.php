@@ -13,6 +13,7 @@ class LaravelQueue extends LaravelQueueAbstract
     public function __construct(Container $app)
     {
         parent::__construct($app);
+
         $this->load();
     }
 
@@ -76,4 +77,5 @@ class LaravelQueue extends LaravelQueueAbstract
 
         return $this;
     }
+
 }

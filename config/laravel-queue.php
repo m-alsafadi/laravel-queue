@@ -27,6 +27,11 @@ return [
 
     'log_driver' => env('LARAVEL_QUEUE_LOG_CHANNEL', 'stack'),
 
+    /*
+     * How many job to execute per worker, int|null, null to execute all pending jobs
+     */
+    'jobs_execution_limit' => null,
+
     'human_readable_save' => false,
 
     'jobs_filename' => "jobs.json",
