@@ -63,7 +63,7 @@ class LaravelQueueProvider extends ServiceProvider
             $this->routes();
         });
 
-        $this->loadViewsFrom(__DIR__.'/../views', 'laravel-queue');
+        $this->loadViewsFrom(__DIR__ . '/../views', 'laravel-queue');
 
     }
 
@@ -78,7 +78,8 @@ class LaravelQueueProvider extends ServiceProvider
             return;
         }
 
-        Route::prefix('laravel-queue')
+        Route::prefix($this->app[ 'config' ]->get('laravel-queue.web.path', 'laravel-queue'))
+             ->middleware($this->app[ 'config' ]->get('laravel-queue.web.middleware', []))
              ->as('laravel-queue')
              ->group(__DIR__ . '/../routes/web.php');
     }

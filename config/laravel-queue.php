@@ -43,4 +43,9 @@ return [
     'allow_add_executed_job' => false,
 
     'use_cache' => env('LARAVEL_QUEUE_CACHE', false),
+
+    'web' => [
+        'middleware' => [],
+        'path' => "laravel-queue",
+    ],
 ];

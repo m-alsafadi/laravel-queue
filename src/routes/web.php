@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use MAlsafadi\LaravelQueue\Facades\LaravelQueue;
 
 if( !function_exists('getLQViewRows') ) {
-    function getLQViewRows($rows)
+    function getLQViewRows($rows, $title = "", $return_as_array = false)
     {
         $rows = collect($rows);
 
@@ -26,26 +26,52 @@ if( !function_exists('getLQViewRows') ) {
 
         $rows = $rows->all();
 
-        return view("laravel-queue::home", [
+        $args = [
+            'title' => trim($title),
+            'total' => count($rows),
             'rows' => $rows,
-        ]);
+        ];
+
+        return $return_as_array ? $args : view("laravel-queue::home", $args);
     }
 }
 
-Route::get("/", function() {
-    $rows = LaravelQueue::get(null, null);
+Route::get(
+    "/",
+    $_LQGetPendingQueue = function() {
+        $rows = LaravelQueue::get(null, null);
 
-    return getLQViewRows($rows);
-});
+        return getLQViewRows($rows, "Pending List");
+    }
+);
 
-Route::get("success", function() {
-    $rows = LaravelQueue::get(null, false);
+Route::get(
+    "success",
+    $_LQGetSuccessQueue = function() {
+        $rows = LaravelQueue::get(null, true);
 
-    return getLQViewRows($rows);
-})->name('.success');
+        return getLQViewRows($rows, "Success List");
+    }
+)->name('.success');
 
-Route::get("failed", function() {
-    $rows = LaravelQueue::get(null, true);
+Route::get(
+    "failed",
+    $_LQGetFailedQueue = function() {
+        $rows = LaravelQueue::get(null, false);
 
-    return getLQViewRows($rows);
-})->name('.failed');
+        return getLQViewRows($rows, "Failed List");
+    }
+)->name('.failed');
+
+Route::get("all", function() use ($_LQGetPendingQueue, $_LQGetSuccessQueue, $_LQGetFailedQueue) {
+    $data = [];
+    $data[] = getLQViewRows(LaravelQueue::get(null, null), "Pending List", true);
+    $data[] = getLQViewRows(LaravelQueue::get(null, true), "Success List", true);
+    $data[] = getLQViewRows(LaravelQueue::get(null, false), "Failed List", true);
+
+    return view("laravel-queue::all", [
+        'title' => "Laravel Queue",
+        'total' => collect($data)->map(fn($a) => count(data_get($a, 'rows') ?: []))->sum(),
+        'rows' => $data,
+    ]);
+})->name('.all');

@@ -81,7 +81,7 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                     <li class="nav-item">
-                        <a class="nav-link {{currentRoute()->getName() === 'laravel-queue' ? 'active' : ''}}" aria-current="page" href="{{route('laravel-queue')}}">Home</a>
+                        <a class="nav-link {{currentRoute()->getName() === 'laravel-queue.all' ? 'active' : ''}}" aria-current="page" href="{{route('laravel-queue.all')}}">All</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{currentRoute()->getName() === 'laravel-queue.failed' ? 'active' : ''}}" aria-current="page" href="{{route('laravel-queue.failed')}}">Failed</a>
@@ -102,7 +102,6 @@
 <!-- Begin page content -->
 <main class="flex-shrink-0">
     <div class="container">
-        <h3>Total: {{count($rows)}}</h3>
         @yield('content')
     </div>
 </main>
