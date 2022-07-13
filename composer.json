@@ -1,0 +1,59 @@
+{
+    "name": "m-alsafadi/laravel-queue",
+    "description": "Laravel Custom Queue System",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "queue"
+    ],
+    "require": {
+        "php": ">=8.1",
+        "laravel/framework": ">=8",
+        "laravel/helpers": "^1.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohammad Al-Safadi",
+            "email": "alsafadi@dafa.sa"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MAlsafadi\\LaravelQueue\\": "src/"
+        },
+        "files": [
+            "src/Helpers/Functions.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MAlsafadi\\LaravelQueue\\Providers\\LaravelQueueProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "scripts": {
+        "helpers": [
+            "@php -r \"@unlink('.phpstorm.meta.php');@unlink('_ide_helper.php');@unlink('_ide_helper_models.php');\"",
+            "@php artisan ide-helper:generate",
+            "@php artisan ide-helper:meta",
+            "@php artisan ide-helper:model -N",
+            "@php artisan ide-helper:eloquent"
+        ],
+        "c:c": [
+            "@php artisan cache:clear",
+            "@php artisan route:clear",
+            "@php artisan config:clear",
+            "@php artisan view:clear"
+        ],
+        "a:routes": [
+            "@php artisan route:list --no-ansi > routes.txt"
+        ]
+    },
+    "version": "1.0.0"
+}

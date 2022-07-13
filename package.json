@@ -1,0 +1,26 @@
+{
+    "name": "@m-alsafadi/laravel-queue",
+    "version": "1.0.0",
+    "description": "Laravel Custom Queue System",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/m-alsafadi/laravel-queue.git"
+    },
+    "keywords": [
+        "laravel",
+        "queue"
+    ],
+    "author": "Mohammad Al-Safadi",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/m-alsafadi/laravel-queue/issues"
+    },
+    "homepage": "https://github.com/m-alsafadi/laravel-queue#readme",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    }
+}

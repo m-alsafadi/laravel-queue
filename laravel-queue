@@ -1,0 +1,9 @@
+#!/usr/bin/env php
+<?php
+
+$argv = $_SERVER[ 'argv' ] = [
+    'artisan',
+    'laravel:queue:start',
+];
+
+require_once 'artisan';
