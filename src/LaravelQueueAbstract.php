@@ -521,7 +521,7 @@ abstract class LaravelQueueAbstract
      * @return bool
      * @throws \Throwable
      */
-    public static function checkIsPast($date, bool $allow_null = false, string $exception_message = "date not past yet"): bool
+    public static function checkDateTime($date, bool $allow_null = false, string $exception_message = "date not past yet"): bool
     {
         throw_if(( !$allow_null && is_null($date)) || !static::isPast($date), $exception_message);
 

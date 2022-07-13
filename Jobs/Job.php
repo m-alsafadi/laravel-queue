@@ -18,7 +18,7 @@ class Job extends AbstractLaravelQueueJob
     public function handle()
     {
         $model = Model::findOrFail($this->id);
-        LaravelQueue::checkIsPast($model->valid_at, false, "Not set or its not past yet");
+        LaravelQueue::checkDateTime($model->valid_at, false, "Not set or its not past yet");
 
         return true;
     }

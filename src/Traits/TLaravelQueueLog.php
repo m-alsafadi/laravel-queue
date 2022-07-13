@@ -7,6 +7,11 @@ namespace MAlsafadi\LaravelQueue\Traits;
  */
 trait TLaravelQueueLog
 {
+    public function getLogDriver(): string
+    {
+        return $this->config('log_driver', 'stack');
+    }
+
     public function debug(string $message, array $context = [])
     {
         if( $this->debug ) {
@@ -18,7 +23,7 @@ trait TLaravelQueueLog
             $line = data_get($stack, 'line');
             $method = data_get($stack, 'function');
             $type = data_get($stack, 'type');
-            logger()->driver('laravel-queue')->debug("{$file}{$type}{$method}:{$line} {$message}", $stack);
+            logger()->driver($this->getLogDriver())->debug("{$file}{$type}{$method}:{$line} {$message}", $stack);
         }
     }
 
@@ -41,7 +46,7 @@ trait TLaravelQueueLog
             $line = data_get($stack, 'line');
             $method = data_get($stack, 'function');
             $type = data_get($stack, 'type');
-            $logger = logger()->driver('laravel-queue')->getLogger();
+            $logger = logger()->driver($this->getLogDriver())->getLogger();
             $logger->info("{$message}\t{$file}{$type}{$method}:{$line}", $stack);
         }
     }
@@ -65,7 +70,7 @@ trait TLaravelQueueLog
         $method = data_get($stack, 'function');
         $type = data_get($stack, 'type');
         /** @var \Psr\Log\LoggerInterface $logger */
-        $logger = logger()->driver('laravel-queue')->getLogger();
+        $logger = logger()->driver($this->getLogDriver())->getLogger();
         $logger->notice("{$message}\t{$file}{$type}{$method}:{$line}", $stack);
     }
 }

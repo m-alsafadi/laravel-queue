@@ -12,6 +12,7 @@ LARAVEL_QUEUE_ENABLED=true
 LARAVEL_QUEUE_DISK=local
 LARAVEL_QUEUE_SINGLE_PROC=true
 LARAVEL_QUEUE_CACHE=false
+LARAVEL_QUEUE_LOG_CHANNEL=stack
 ```
 3. Add trait to your model (_optional_):
 ```php

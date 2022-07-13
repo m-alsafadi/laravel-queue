@@ -25,6 +25,8 @@ return [
 
     'single_process' => env('LARAVEL_QUEUE_SINGLE_PROC', true),
 
+    'log_driver' => env('LARAVEL_QUEUE_LOG_CHANNEL', 'stack'),
+
     'human_readable_save' => false,
 
     'jobs_filename' => "jobs.json",
