@@ -618,4 +618,21 @@ abstract class LaravelQueueAbstract
 
         return $isRunning;
     }
+
+    /**
+     * @param bool          $condition
+     * @param \Closure|null $value
+     * @param \Closure|null $default
+     *
+     * @return $this
+     */
+    public function when($condition, \Closure|null $value = null, \Closure|null $default = null)
+    {
+        $method = $condition ? $value : $default;
+        if( $method ) {
+            $method($this);
+        }
+
+        return $this;
+    }
 }

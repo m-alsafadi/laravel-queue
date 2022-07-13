@@ -7,6 +7,7 @@ namespace MAlsafadi\LaravelQueue\Providers;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use MAlsafadi\LaravelQueue\Commands\LaravelQueueCommand;
 use MAlsafadi\LaravelQueue\Commands\NewLaravelQueueJobCommand;
@@ -57,6 +58,29 @@ class LaravelQueueProvider extends ServiceProvider
                                  $this->workerPath() => base_path('laravel-queue'),
                              ], 'laravel-queue');
         }
+
+        $this->app->booted(function() {
+            $this->routes();
+        });
+
+        $this->loadViewsFrom(__DIR__.'/../views', 'laravel-queue');
+
+    }
+
+    /**
+     * Register the field's routes.
+     *
+     * @return void
+     */
+    protected function routes()
+    {
+        if( $this->app->routesAreCached() ) {
+            return;
+        }
+
+        Route::prefix('laravel-queue')
+             ->as('laravel-queue')
+             ->group(__DIR__ . '/../routes/web.php');
     }
 
     /**
