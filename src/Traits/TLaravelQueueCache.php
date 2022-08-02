@@ -17,6 +17,13 @@ trait TLaravelQueueCache
         return "laravel-queue" . ($is_fail === true ? "-fails" : ($is_fail === false ? "-success" : ""));
     }
 
+    public function getHistoryCacheKey(): string
+    {
+        $this->debug("get History cache key", [ __METHOD__, func_get_args() ]);
+
+        return "laravel-queue-history";
+    }
+
     /**
      * @param string|\Closure|null $name
      *
@@ -30,6 +37,21 @@ trait TLaravelQueueCache
         }
 
         return Cache::rememberForever($this->getCacheKey($is_fail), fn() => []);
+    }
+
+    /**
+     * @param string|\Closure|null $name
+     *
+     * @return mixed
+     */
+    public function getHistoryCache()
+    {
+        $this->debug("get History cache", [ __METHOD__, func_get_args() ]);
+        if( !$this->hasHistoryCache() ) {
+            $this->putHistoryCache([]);
+        }
+
+        return Cache::rememberForever($this->getHistoryCacheKey(), fn() => []);
     }
 
     /**
@@ -49,6 +71,21 @@ trait TLaravelQueueCache
     }
 
     /**
+     * @param mixed $value
+     *
+     * @return $this
+     */
+    public function putHistoryCache($value = null)
+    {
+        $this->debug("put History cache", [ __METHOD__, func_get_args() ]);
+        $value = value($value) ?: [];
+
+        Cache::forever($this->getHistoryCacheKey(), $value);
+
+        return $this;
+    }
+
+    /**
      * @param string|\Closure|null $name
      *
      * @return bool
@@ -61,12 +98,33 @@ trait TLaravelQueueCache
     }
 
     /**
+     * @return bool
+     */
+    public function hasHistoryCache()
+    {
+        $this->debug("has History cache", [ __METHOD__, func_get_args() ]);
+
+        return Cache::has($this->getHistoryCacheKey());
+    }
+
+    /**
      * @return $this
      */
     public function flushCache(?bool $is_fail = null)
     {
         $this->debug("flush cache", [ __METHOD__, func_get_args() ]);
         Cache::forget($this->getCacheKey($is_fail));
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function flushHistoryCache()
+    {
+        $this->debug("flush History cache", [ __METHOD__, func_get_args() ]);
+        Cache::forget($this->getHistoryCacheKey());
 
         return $this;
     }

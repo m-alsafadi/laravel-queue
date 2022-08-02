@@ -1,4 +1,3 @@
-
 <h3>{{$title ?? ''}}</h3>
 <h4>Total: {{$total ?? count($rows)}}</h4>
 <table class="table table-bordered table-striped text-nowrap table-hover">
@@ -14,6 +13,9 @@
         <th scope="col"><a href="?order=result&dir={{!request('dir')}}">Result</a> {{request('order')==="result"?(!request('dir') ? "[a]" : "[d]"):""}}</th>
         <th scope="col"><a href="?order=result_at&dir={{!request('dir')}}">Result Date</a> {{request('order')==="result_at"?(!request('dir') ? "[a]" : "[d]"):""}}</th>
         <th scope="col"><a href="?order=created_at&dir={{!request('dir')}}">Created At</a> {{request('order')==="created_at"?(!request('dir') ? "[a]" : "[d]"):""}}</th>
+        @if($history ?? false)
+        <th scope="col"><a href="?order=history_at&dir={{!request('dir')}}">History At</a> {{request('order')==="history_at"?(!request('dir') ? "[a]" : "[d]"):""}}</th>
+        @endif
     </tr>
     </thead>
     <tbody class="">
@@ -28,12 +30,16 @@
             <td>{{$row['job'] ?? '-'}}</td>
             <td>{{$row['model'] ?? '-'}}</td>
             <td>{{$row['model_id'] ?? '-'}}</td>
-            <td>{{$row['arguments'] ?? '-'}}</td>
-            <td>{{$row['date'] ? \Carbon\Carbon::parse($row['date']) : '-'}}</td>
-            <td>{{$row['result'] ?? '-'}}</td>
-            <td>{{$row['result_at'] ? \Carbon\Carbon::parse($row['result_at']) : '-'}}</td>
-            <td>{{$row['created_at'] ? \Carbon\Carbon::parse($row['created_at']) : '-'}}</td>
+            <td class="cursor-pointer text-wrap small has-data-text" data-text="<pre>{{$row['arguments'] ?? '-'}}</pre>">...</td>
+            <td>{{$row['date'] ? \Carbon\Carbon::parse($row['date']??null)->format(config('app.datetime_format') ?: 'Y-m-d h:i:s a') : '-'}}</td>
+            <td class="cursor-pointer text-wrap small has-data-text" data-show-text="{{trim(intval(strlen($row['result'] ?? '-') <= 5))}}" data-text="<pre>{{$row['result'] ?? '-'}}</pre>">...</td>
+            <td>{{$row['result_at'] ? \Carbon\Carbon::parse($row['result_at']??null)->format(config('app.datetime_format') ?: 'Y-m-d h:i:s a') : '-'}}</td>
+            <td>{{$row['created_at'] ? \Carbon\Carbon::parse($row['created_at']??null)->format(config('app.datetime_format') ?: 'Y-m-d h:i:s a') : '-'}}</td>
+            @if($history ?? false)
+            <td>{{$row['history_at'] ? \Carbon\Carbon::parse($row['history_at']??null)->format(config('app.datetime_format') ?: 'Y-m-d h:i:s a') : '-'}}</td>
+            @endif
         </tr>
     @endforeach
     </tbody>
 </table>
+<hr />

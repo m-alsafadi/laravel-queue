@@ -40,6 +40,8 @@ return [
 
     'success_jobs_filename' => "success_jobs.json",
 
+    'jobs_history' => "jobs_history.json",
+
     'allow_add_executed_job' => false,
 
     'use_cache' => env('LARAVEL_QUEUE_CACHE', false),

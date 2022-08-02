@@ -1,4 +1,4 @@
-# Laravel Queue `1.0.0`
+# Laravel Queue `1.1.0`
 
 ## Installation
 
@@ -45,16 +45,20 @@ php artisan vendor:publish --provider=MAlsafadi\\LaravelQueue\\Providers\\Larave
 #### How to  add job to queue:
 1. Via your job:
 ```php
-\App\Jobs\UserJob::addJob($model, $valid_at, $arguments);
+\App\Jobs\UserJob::addJob($model, $valid_at, $arguments, $name);
 ```
+
 2. Via your model:
 ```php
-\App\Models\User::find(1)->addJob(\App\Jobs\UserJob::class, $valid_at, $arguments);
+\App\Models\User::find(1)->addJob(\App\Jobs\UserJob::class, $valid_at, $arguments, $name);
 ```
+
 3. Via Laravel Queue:
 ```php
-LaravelQueue::addJob($model, \App\Jobs\UserJob::class, $valid_at, $arguments);
+LaravelQueue::addJob($model, \App\Jobs\UserJob::class, $valid_at, $arguments, $name);
 ```
+> _Info:_ Attribute `$name` is optional.
+
 
 ---
 

@@ -9,7 +9,7 @@ use MAlsafadi\LaravelQueue\Traits\TLaravelQueueFile;
 use MAlsafadi\LaravelQueue\Traits\TLaravelQueueLog;
 
 /**
- *
+ * @mixin \MAlsafadi\LaravelQueue\Traits\TLaravelQueueFile
  */
 abstract class LaravelQueueAbstract
 {
@@ -73,6 +73,7 @@ abstract class LaravelQueueAbstract
     public string $STORAGE_NAME = 'jobs.json';
     public string $STORAGE_NAME_FAIL = 'failed_jobs.json';
     public string $STORAGE_NAME_SUCCESS = 'success_jobs.json';
+    public string $STORAGE_NAME_HISTORY = 'jobs_history.json';
 
     private ?int $pid = null;
 
@@ -91,6 +92,7 @@ abstract class LaravelQueueAbstract
         $this->STORAGE_NAME = $this->config('jobs_filename', "jobs.json");
         $this->STORAGE_NAME_FAIL = $this->config('failed_jobs_filename', "failed_jobs.json");
         $this->STORAGE_NAME_SUCCESS = $this->config('success_jobs_filename', "success_jobs.json");
+        $this->STORAGE_NAME_HISTORY = $this->config('jobs_history', "jobs_history.json");
     }
 
 // region: Queue
@@ -111,14 +113,13 @@ abstract class LaravelQueueAbstract
         }
 
         $this->debug("run", [ __METHOD__, func_get_args() ]);
-        $this->info("Run Queue: " . $this->count(), []);
         foreach( $this->queues as $name => &$queue ) {
             $job = $this->initJob($name, $queue);
             if( is_null($job) ) {
-                $this->info("Skip Job: [$name]", $queue);
+                $this->info("Skip Job ({$name})", $queue);
                 continue;
             }
-            $this->info("Start Job: [$name]", $queue);
+            // $this->info("Run Job ({$name})", $queue);
 
             // fail false throw
             // success true null
@@ -131,15 +132,11 @@ abstract class LaravelQueueAbstract
                 logger($exception);
                 $success = false;
             }
-
-            $this->info("Result Job [$name]: " . print_r(array_wrap($results), true), compact('results'));
+            $this->info("Finish Job ({$name})", compact('results'));
             // register response
             $queue[ 'result' ] = $results;
             $queue[ 'result_at' ] = now();
-
-            $register_result && $this->addOrUpdate($name, $queue, null);
-
-            !$keep && $this->move($name, null, $success);
+            $this->finishJob($name, $queue, null, $keep, $register_result, $success);
         }
         unset($queue);
 
@@ -261,6 +258,21 @@ abstract class LaravelQueueAbstract
     }
 
     /**
+     * Check if the history file exists.
+     *
+     * @return bool
+     */
+    public function historyExists(): bool
+    {
+        $this->debug("history exists", [ __METHOD__, func_get_args() ]);
+        if( $this->use_cache ) {
+            return $this->hasHistoryCache();
+        }
+
+        return $this->disk()->exists($this->getHistoryFilename());
+    }
+
+    /**
      * Check if the file exists (private).
      *
      * @return bool
@@ -287,6 +299,20 @@ abstract class LaravelQueueAbstract
         $this->debug("put", [ __METHOD__, func_get_args() ]);
 
         return $this->use_cache ? $this->putCache($value, $is_fail) : $this->putDisk($value, $is_fail);
+    }
+
+    /**
+     * Save the given history data.
+     *
+     * @param mixed|null $value
+     *
+     * @return $this
+     */
+    public function putHistory($value = null)
+    {
+        $this->debug("put history", [ __METHOD__, func_get_args() ]);
+
+        return $this->use_cache ? $this->putHistoryCache($value) : $this->putHistoryDisk($value);
     }
 
     /**
@@ -340,6 +366,25 @@ abstract class LaravelQueueAbstract
     }
 
     /**
+     * Get Queue from History storage.
+     *
+     * @param string|null $key
+     *
+     * @return $this|array|mixed
+     */
+    public function getHistory(?string $key = null)
+    {
+        $this->debug("get History: [$key]", [ __METHOD__, func_get_args() ]);
+        $data = $this->use_cache ? $this->getHistoryCache() : $this->getHistoryDisk();
+
+        if( !is_null($key) ) {
+            return data_get($data, $key);
+        }
+
+        return $data;
+    }
+
+    /**
      * Remove queue from storage by its name.
      *
      * @param           $name
@@ -354,6 +399,22 @@ abstract class LaravelQueueAbstract
         unset($data[ $name ]);
 
         return $this->put($data, $is_fail);
+    }
+
+    /**
+     * Remove queue from History storage by its name.
+     *
+     * @param string $name
+     *
+     * @return $this
+     */
+    public function removeHistory($name)
+    {
+        $this->debug("remove History: [$name]", [ __METHOD__, func_get_args() ]);
+        $data = $this->getHistory(null);
+        unset($data[ $name ]);
+
+        return $this->putHistory($data);
     }
 
     /**
@@ -380,6 +441,32 @@ abstract class LaravelQueueAbstract
     }
 
     /**
+     * Move finished job to finished list.
+     *
+     * @param string|mixed            $name
+     * @param array|string|null|mixed $value
+     * @param bool|null               $is_fail
+     * @param bool                    $keep
+     * @param bool                    $register_result
+     * @param bool                    $success
+     *
+     * @return $this
+     */
+    public function finishJob($name, $value, ?bool $is_fail = null, bool $keep = false, bool $register_result = true, bool $success = true)
+    {
+        $this->debug("finish job: [$name]", [ __METHOD__, func_get_args() ]);
+
+        $dataHistory = $value;
+        $dataHistory[ 'name' ] ??= $name;
+        $this->addHistory($dataHistory);
+
+        $register_result && $this->addOrUpdate($name, $value, $is_fail);
+        !$keep && $this->move($name, null, $success);
+
+        return $this;
+    }
+
+    /**
      * Add new queue or update existing one by its name.
      *
      * @param array|string|null|mixed $value
@@ -397,25 +484,44 @@ abstract class LaravelQueueAbstract
     }
 
     /**
+     * Add new History or update existing one by its name.
+     *
+     * @param array|string|null|mixed $value
+     *
+     * @return $this
+     */
+    public function addHistory($value)
+    {
+        $this->debug("add History: ", [ __METHOD__, func_get_args() ]);
+        $data = $this->getHistory(null);
+        $value['history_at'] ??= now();
+        $data[] = $value;
+
+        return $this->putHistory($data);
+    }
+
+    /**
      * Add job to queue.
      *
      * @param \Illuminate\Database\Eloquent\Model                         $model
      * @param string|\MAlsafadi\LaravelQueue\Jobs\AbstractLaravelQueueJob $job
      * @param \DateTime|null                                              $valid_at
      * @param array|null                                                  $arguments
+     * @param string|null                                                 $name
      *
      * @return $this
      * @throws \Throwable
      */
-    public function addJob(\Illuminate\Database\Eloquent\Model $model, $job, ?\DateTime $valid_at = null, ?array $arguments = null)
+    public function addJob(\Illuminate\Database\Eloquent\Model $model, $job, ?\DateTime $valid_at = null, ?array $arguments = null, ?string $name = null)
     {
         throw_if(empty($job), "Missing job class!");
-        $name = $this->fixName(get_class($model) . ":{$model->id}");
+        $name ??= get_class($model) . ":{$model->id}";
+        $name = static::fixName($name);
         if( !$this->allow_add_executed_job && static::isInCurrentQueue($name, $job) ) {
             return $this;
         }
 
-        $this->debug("add: [$job]", [ __METHOD__, func_get_args() ]);
+        $this->debug("add: {$name}[$job]", [ __METHOD__, func_get_args() ]);
 
         $arguments = $arguments ? array_wrap(value($arguments)) : $arguments;
         $name = $name ?: ($arguments && count($arguments) ? head($arguments) : uniqid());
@@ -431,7 +537,7 @@ abstract class LaravelQueueAbstract
             'created_at' => now(),
         ];
 
-        $this->info("New Job [$name]: " . print_r($data, true), $data);
+        $this->info("New Job ($name)", $data);
 
         return $this->addOrUpdate($name, $data);
     }
@@ -559,7 +665,7 @@ abstract class LaravelQueueAbstract
         return true;
     }
 
-    public function fixName(\Closure|string $name): string
+    public static function fixName(\Closure|string $name): string
     {
         return preg_replace('/[^a-zA-Z0-9]+/', '', value($name));
     }

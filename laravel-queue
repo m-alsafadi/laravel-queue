@@ -4,6 +4,7 @@
 $argv = $_SERVER[ 'argv' ] = [
     'artisan',
     'laravel:queue:start',
+    ...(array_slice($argv, 1) ?? []),
 ];
 
 require_once 'artisan';

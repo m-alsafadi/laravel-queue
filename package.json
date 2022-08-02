@@ -1,6 +1,6 @@
 {
     "name": "@m-alsafadi/laravel-queue",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Laravel Custom Queue System",
     "main": "index.js",
     "scripts": {

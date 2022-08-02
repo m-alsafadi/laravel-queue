@@ -2,9 +2,6 @@
 
 namespace MAlsafadi\LaravelQueue\Traits;
 
-use Illuminate\Support\Facades\Cache;
-use MAlsafadi\LaravelQueue\LaravelQueueAbstract;
-
 /**
  * @mixin \MAlsafadi\LaravelQueue\LaravelQueue
  */
@@ -30,6 +27,7 @@ trait TLaravelQueueExtra
 
         return isset($queues[ $name ]);
     }
+
     /**
      * Delete current storage.
      *
@@ -50,6 +48,22 @@ trait TLaravelQueueExtra
         return $is_fail ? $this : $this->load();
     }
 
+    /**
+     * Delete current History storage.
+     *
+     * @return $this
+     */
+    public function pruneHistory(): static
+    {
+        $this->debug("delete History", [ __METHOD__, func_get_args() ]);
+        if( $this->use_cache ) {
+            $this->flushHistoryCache();
+        } else {
+            $this->disk()->delete($this->getHistoryFilename());
+        }
+
+        return $this;
+    }
 
     /**
      * Empty current queue.

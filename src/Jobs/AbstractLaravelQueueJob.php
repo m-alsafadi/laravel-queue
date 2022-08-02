@@ -79,13 +79,14 @@ abstract class AbstractLaravelQueueJob
      * @param \Illuminate\Database\Eloquent\Model $model
      * @param \DateTime|null                      $valid_at
      * @param array|null                          $arguments
+     * @param string|null                         $name
      *
      * @return \MAlsafadi\LaravelQueue\Facades\LaravelQueue
      * @throws \Throwable
      */
-    public static function addJob(\Illuminate\Database\Eloquent\Model $model, ?\DateTime $valid_at = null, ?array $arguments = null)
+    public static function addJob(\Illuminate\Database\Eloquent\Model $model, ?\DateTime $valid_at = null, ?array $arguments = null, ?string $name = null)
     {
-        return LaravelQueue::addJob($model, static::class, $valid_at, $arguments);
+        return LaravelQueue::addJob($model, static::class, $valid_at, $arguments, $name);
     }
 
     /**
