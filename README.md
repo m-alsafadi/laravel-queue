@@ -1,5 +1,8 @@
 # Laravel Queue `1.1.0`
 
+Laravel custom queue system.
+
+
 ## Installation
 
 1. Use composer: 
